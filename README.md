@@ -52,8 +52,14 @@ Edit `.env` if needed.
 .\.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
+If you hit `ERROR: [WinError 10013] ... forbidden by its access permissions`, another process (or a policy) is blocking port 8000. Use a different port:
+
+```powershell
+.\.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
+```
+
 Health check:
-- `GET http://127.0.0.1:8000/health`
+- `GET http://127.0.0.1:8000/health` (or `:8001` if you changed ports)
 
 OpenAPI:
 - `http://127.0.0.1:8000/docs`
