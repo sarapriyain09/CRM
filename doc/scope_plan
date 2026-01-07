@@ -1,0 +1,399 @@
+Below is a **Capabilities + Weekly Plan** document you can use as:
+
+* Internal build plan
+* Partner discussion doc
+* Roadmap anchor
+
+---
+
+# 📘 Product Document
+
+## Social Media Campaign Automation Tool & Revenue CRM
+
+---
+
+## 1️⃣ Product Overview
+
+The system is an **AI-assisted social media campaign and lead management platform** that:
+
+* Identifies **viral and high-performing content patterns** by region and niche
+* Generates **original, platform-ready campaign content**
+* Automates **posting, tracking, and attribution**
+* Captures and qualifies **leads into a lightweight CRM**
+* Routes **high-intent leads** to:
+
+  * **CodLearn** (DIY / students / prototyping)
+  * **Splendid Technology** (custom web apps, e-commerce, automation, AI integrations)
+
+This platform is built **first for internal growth**, then reusable as a **commercial product or managed service**.
+
+---
+
+## 2️⃣ Core Capabilities
+
+### A. Trend Intelligence Engine
+
+* Region-based trend detection (UK, India, Global)
+* Multi-source trend ingestion (Google Trends, YouTube, Reddit, social metadata)
+* Trend scoring based on:
+
+  * velocity
+  * recency
+  * engagement indicators
+  * niche relevance
+* Historical snapshots for momentum tracking
+* Output as structured **Trend Intelligence JSON**
+
+---
+
+### B. Campaign Management
+
+* Auto-create campaigns from top trends
+* Campaign attributes:
+
+  * region
+  * niche (students, small business, e-commerce)
+  * objective (lead generation)
+  * routing target (CodLearn or Splendid Technology)
+* Campaign lifecycle management (active / paused / archived)
+
+---
+
+### C. AI Content Generation
+
+* Original content generation (no copying)
+* Platform-specific content packs:
+
+  * hooks
+  * short scripts (15–30 sec)
+  * captions
+  * hashtags
+  * CTA logic
+* CTA auto-routing:
+
+  * DIY → CodLearn
+  * Business / E-commerce → Splendid Technology
+* Multiple variations per trend for A/B testing
+* Human approval workflow before publishing
+
+---
+
+### D. Publishing & Scheduling
+
+* Automated scheduling by platform and region
+* Manual or API-based publishing (MVP-friendly)
+* Post lifecycle tracking:
+
+  * draft
+  * approved
+  * scheduled
+  * published
+  * failed
+* Performance metrics capture:
+
+  * views
+  * likes
+  * comments
+  * clicks
+
+---
+
+### E. Lead Capture & Attribution
+
+* UTM-based attribution from every campaign
+* Lead capture via:
+
+  * CodLearn app usage
+  * Contact forms
+  * CTA clicks
+* Unified lead identity across platforms
+* Anonymous-to-known lead upgrade (email capture later)
+
+---
+
+### F. Lightweight CRM (Revenue-Focused)
+
+* Centralised lead database
+* Lead intent classification:
+
+  * student
+  * small business
+  * e-commerce
+  * internal tool
+  * agency / enterprise
+* Activity timeline (events-based)
+* Notes and follow-up tasks
+* Simple pipeline status:
+
+  * new
+  * contacted
+  * qualified
+  * proposal
+  * won / lost
+
+---
+
+### G. Lead Scoring & Qualification
+
+* Event-based scoring rules
+* Automatic lead qualification
+* Sales-ready threshold detection
+* High-intent signal detection (e.g., export attempts, e-commerce intent)
+
+---
+
+### H. CodLearn Integration
+
+* Track:
+
+  * project creation
+  * intent selection
+  * export / deploy attempts
+* Use CodLearn as:
+
+  * lead magnet
+  * qualification engine
+* Seamless handoff for production-ready builds
+
+---
+
+### I. Splendid Technology Handoff
+
+* Automatic handoff creation for high-intent leads
+* Full context passed:
+
+  * project details
+  * campaign source
+  * UTM data
+* Sales notification & follow-up task creation
+* Clear separation:
+
+  * CodLearn = prototyping
+  * Splendid Technology = professional execution
+
+---
+
+### J. Automation & Orchestration
+
+* n8n-based workflows for:
+
+  * trend ingestion
+  * campaign creation
+  * content generation
+  * publishing
+  * CRM updates
+* Webhook-driven architecture
+* Fully auditable event flow
+
+---
+
+### K. Analytics & Insights (MVP Level)
+
+* Campaign performance overview
+* Lead conversion funnel:
+
+  * views → clicks → leads → qualified → revenue
+* Region and platform effectiveness
+* Content format effectiveness
+
+---
+
+## 3️⃣ Weekly Execution Plan (8-Week Build)
+
+## Current Implementation Status (as of 2026-01-07)
+
+This repo already implements the MVP backend contracts (FastAPI + Postgres) and an importable n8n workflow.
+
+**Backend foundation**
+* FastAPI app + SQLAlchemy models + Alembic migrations
+* Postgres schema created via Alembic migration `0001` (enums + tables + indexes)
+* Campaign slug support via migration `0002`
+* Global Bearer API key auth on all `/api/*` routes
+
+**API contracts (aligned to MVP envelopes/status codes)**
+* Trends: `/api/trends/ingest`, `/api/trends/top` (ingest upserts items + inserts snapshots)
+* Campaigns: `/api/campaigns` (create/list with `{items:[...]}`)
+* Content: `/api/content/generate`, `/api/content/{id}/approve`, `/api/content/approved`
+* Posts: `/api/posts/schedule`, `/api/posts/update-status`, `/api/posts/metrics`, `/api/posts/recent`
+* Leads: `/api/leads/upsert`, `/api/leads` list (filters), `/api/leads/{id}/events|notes|tasks`, `/api/leads/{id}/score/recalculate`
+* Handoff: `/api/handoff/create`, `/api/handoff/recent`
+
+**n8n**
+* W1 workflow exists and no longer references `/api/trends/fetch`; it uses a placeholder items node and calls `/api/trends/ingest`.
+
+**Remaining gaps (next work)**
+* W2 + W3 n8n workflows (approved content → scheduling; lead webhooks → CRM + handoff)
+* Real trend collectors (replace placeholder items) and/or optional `/api/trends/fetch`
+* Actual AI content generation (LLM integration) and approval UI (if desired)
+* Publishing integration (manual publish is OK for MVP)
+
+---
+
+## 🗓️ Week 1 — Foundation & Data Model
+
+**Objective:** Stable backend foundation
+
+* Finalise database schema (trends, campaigns, CRM)
+* Set up FastAPI project structure
+* Implement API key authentication
+* Create core tables and migrations
+* Stub core endpoints
+
+**Deliverables:**
+
+* Status: Implemented in this repo
+
+---
+
+## 🗓️ Week 2 — Trend Intelligence
+
+**Objective:** Reliable trend ingestion & scoring
+
+* Implement `/trends/ingest` and `/trends/top`
+* Build scoring logic (velocity, recency)
+* Store trend snapshots
+* Test multi-region ingestion
+* n8n cron for daily trend collection
+
+**Deliverables:**
+
+* Status: Implemented (ingest + top + snapshots)
+
+---
+
+## 🗓️ Week 3 — Campaign Engine
+
+**Objective:** Turn trends into campaigns
+
+* Campaign CRUD APIs
+* Auto-campaign creation from trends
+* Define niche & routing logic
+* Campaign listing & filtering
+* n8n workflow: trends → campaigns
+
+**Deliverables:**
+
+* Status: API implemented; orchestration is via n8n W1
+
+---
+
+## 🗓️ Week 4 — AI Content Generation
+
+**Objective:** Original, reusable content packs
+
+* Implement `/content/generate`
+* Define prompt templates
+* Store content packs in DB
+* Approval API & UI stub
+* n8n workflow: campaign → content packs
+
+**Deliverables:**
+
+* Status: API implemented (stores packs); LLM generation + approval UI are optional next steps
+
+---
+
+## 🗓️ Week 5 — Publishing & Scheduling
+
+**Objective:** Go live with campaigns
+
+* Social post scheduling API
+* Publishing workflow (manual or API)
+* Post status updates
+* Metrics ingestion endpoint
+* n8n workflow: approval → publish
+
+**Deliverables:**
+
+* Status: API implemented (schedule/status/metrics); publishing integration is the next step
+
+---
+
+## 🗓️ Week 6 — CRM Core
+
+**Objective:** Revenue tracking begins
+
+* Lead upsert logic
+* Event-based activity tracking
+* Lead list & filters
+* Notes & tasks APIs
+* Initial CRM dashboard
+
+**Deliverables:**
+
+* Status: API implemented; needs inbound webhook wiring (W3)
+
+---
+
+## 🗓️ Week 7 — Lead Scoring & Routing
+
+**Objective:** Automate revenue handoff
+
+* Implement scoring rules
+* Auto-qualification logic
+* Handoff creation for Splendid Technology
+* Email / Slack notifications
+* CodLearn webhook integration
+
+**Deliverables:**
+
+* Status: API implemented; notifications + webhook wiring remain
+
+---
+
+## 🗓️ Week 8 — Analytics & Hardening
+
+**Objective:** Prepare for scale & reuse
+
+* Funnel analytics
+* Campaign ROI view
+* Error handling & retries
+* Security hardening
+* Documentation & deployment cleanup
+
+**Deliverables:**
+
+* Status: pending (analytics + ops hardening)
+
+---
+
+## 4️⃣ Long-Term Expansion (Optional)
+
+* Multi-client mode (sell as SaaS)
+* White-label version for agencies
+* WhatsApp / SMS follow-ups
+* AI-based content performance optimisation
+* Paid ads + organic unification
+* Customer lifetime value tracking
+
+---
+
+## 5️⃣ Strategic Value (Why This Matters)
+
+* You own **traffic + data + leads**
+* CodLearn becomes a **conversion engine**
+* Splendid Technology receives **qualified business leads**
+* No dependency on ads alone
+* Platform can evolve into a **sellable SaaS**
+
+---
+
+## Definition of Done (MVP)
+
+The MVP is considered “ready” when the following are true:
+
+* Backend can start cleanly and migrations apply successfully (`alembic upgrade head`).
+* All `/api/*` endpoints require `Authorization: Bearer <API_KEY>` and return `401` when missing/invalid.
+* W1 workflow can run end-to-end and results in:
+  * trend ingestion + snapshots recorded
+  * campaigns created with slugs
+  * content packs created (and retrievable via `/api/content/approved` once approved)
+* W2 workflow can take approved content packs and create scheduled posts.
+* W3 workflow can upsert leads, append events, recalculate score, and create handoffs for sales-ready leads.
+
+### Next
+
+Suggested next work items to keep momentum:
+1) Create W2 + W3 n8n workflows for end-to-end automation
+2) Replace placeholder trend items with a real collector (Google Trends / Reddit / YouTube)
+3) Add a lightweight approval UI (optional) or keep approval in n8n

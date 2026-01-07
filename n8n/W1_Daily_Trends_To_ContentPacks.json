@@ -1,0 +1,388 @@
+{
+  "name": "W1_Daily_Trends_To_ContentPacks",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": [
+          {
+            "mode": "everyDay",
+            "hour": 6,
+            "minute": 30
+          }
+        ],
+        "timezone": "Europe/London"
+      },
+      "id": "f0f6b5d2-4a2e-4fb6-9a65-0b52c6d56e2e",
+      "name": "Cron (Daily 06:30 UK)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        260,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "json": [
+            {
+              "name": "regions",
+              "value": "={{ [\"UK\", \"IN\"] }}"
+            },
+            {
+              "name": "niches",
+              "value": "={{ [\"small_business\", \"ecommerce\", \"students\"] }}"
+            },
+            {
+              "name": "platforms",
+              "value": "={{ [\"tiktok\", \"instagram\", \"youtube\", \"linkedin\"] }}"
+            },
+            {
+              "name": "topN",
+              "value": "={{ 5 }}"
+            }
+          ]
+        }
+      },
+      "id": "8d7a8d1c-1e74-4e87-9f2e-9f4e1a5d6f7a",
+      "name": "Set (Config)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        500,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const regions = $json.regions || [];\nconst niches = $json.niches || [];\nconst platforms = $json.platforms || [];\nconst topN = $json.topN || 5;\n\nreturn regions.map(region => ({\n  json: {\n    region,\n    niches,\n    platforms,\n    topN\n  }\n}));"
+      },
+      "id": "0b45a4c7-2b50-4a1e-a90c-85a2e5c0d3b1",
+      "name": "Function (Expand Regions)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        740,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "a5dd1a0d-5b06-4b63-9d4e-5bd5f7c45a92",
+      "name": "Split In Batches (Regions)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        980,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "json": [
+            {
+              "name": "items",
+              "value": "={{ ($json.niches || ['small_business']).map(n => ({ source: 'manual', topic: 'Placeholder trend - ' + n, category: n, language: 'en', metrics: { interest: 50 }, features: { recency_hours: 6 } })) }}"
+            }
+          ]
+        }
+      },
+      "id": "6a0c4af4-5d62-4b49-9b56-4417edc7d3a4",
+      "name": "Set (Items Manually)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Normalize to the backend ingest shape (MVP spec).\n// Expected downstream: { region, items: [{source, topic, url?, category?, language?, metrics?, features?}] }\n\nconst region = $node['Split In Batches (Regions)'].json.region;\n\n// Upstream node provides {items:[...]} (manual placeholder or a real collector).\nconst items = ($json.items || []).map(x => ({\n  source: x.source || x.source_name || 'manual',\n  topic: x.topic || x.keyword || x.title || '',\n  url: x.url || null,\n  category: x.category || null,\n  language: x.language || null,\n  metrics: x.metrics || (typeof x.interest === 'number' ? { interest: x.interest } : {}),\n  features: x.features || {}\n})).filter(x => x.topic);\n\nreturn [{ json: { region, items } }];"
+      },
+      "id": "d7c1c7b8-11e9-4bcb-bacd-5c0f19737d11",
+      "name": "Function (Normalize Trends)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE + '/api/trends/ingest'}}",
+        "sendHeaders": true,
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "={{'Bearer ' + $env.API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}"
+      },
+      "id": "d2fdf8c8-31fd-4e65-8d4a-36a9f4a4cfa1",
+      "name": "HTTP (Ingest Trends)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1700,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const region = $node['Split In Batches (Regions)'].json.region;\nconst platforms = $node['Split In Batches (Regions)'].json.platforms || [];\nconst topN = $node['Split In Batches (Regions)'].json.topN || 5;\n\nconst top = ($json.top_trends || []).slice(0, topN);\n\nconst date = new Date().toISOString().slice(0,10);\n\nreturn top.map((t, i) => ({\n  json: {\n    region,\n    platforms,\n    rank: i + 1,\n    trend_item_id: t.trend_item_id,\n    topic: t.topic,\n    score: t.score,\n    campaign_slug: `${region.toLowerCase()}_${date}_t${t.trend_item_id}`\n  }\n}));"
+      },
+      "id": "d0f2f4c9-9a4a-438f-9ce0-2eafc3d5ff17",
+      "name": "Function (Pick Top N)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        1940,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "48d8b2ed-3a55-4b0f-a7a5-6c352b0e86fb",
+      "name": "Split In Batches (Top Trends)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2180,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE + '/api/campaigns'}}",
+        "sendHeaders": true,
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "={{'Bearer ' + $env.API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  name: `${$json.region} Trend ${$json.rank} - ${$json.topic}`,\n  region: $json.region,\n  target: 'codlearn',\n  offer: 'Free prototype',\n  niche: 'small_business',\n  status: 'active',\n  slug: $json.campaign_slug\n}"
+      },
+      "id": "f1a7fd32-8c12-4f8f-b733-9b9332b0a42c",
+      "name": "HTTP (Create Campaign)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2420,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE + '/api/content/generate'}}",
+        "sendHeaders": true,
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "={{'Bearer ' + $env.API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  campaign_slug: $node['Split In Batches (Top Trends)'].json.campaign_slug,\n  trend_item_id: $node['Split In Batches (Top Trends)'].json.trend_item_id,\n  platforms: $node['Split In Batches (Top Trends)'].json.platforms,\n  target: 'codlearn',\n  cta: {\n    codlearn_url_template: 'https://www.codlearn.com/app/?utm_source={{platform}}&utm_campaign={{campaign_slug}}&utm_content={{variant}}',\n    splendid_url_template: 'https://www.splendidtechnology.co.uk/?utm_source={{platform}}&utm_campaign={{campaign_slug}}&utm_content={{variant}}'\n  }\n}"
+      },
+      "id": "9f2d3ed8-22ff-4dc7-86fd-241402a4e093",
+      "name": "HTTP (Generate Content Packs)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2660,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{$env.NOTIFY_FROM_EMAIL || 'n8n@localhost'}}",
+        "toEmail": "={{$env.NOTIFY_TO_EMAIL || 'you@yourdomain.com'}}",
+        "subject": "={{'W1: Content packs created for ' + $node['Split In Batches (Top Trends)'].json.campaign_slug}}",
+        "text": "={{'Campaign created and packs generated. Approve packs in your dashboard. Campaign slug: ' + $node['Split In Batches (Top Trends)'].json.campaign_slug}}",
+        "options": {}
+      },
+      "id": "2f4cdbf9-0cf5-4b8a-9d45-1fdfc96779de",
+      "name": "Email (Approval Request)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        2900,
+        240
+      ],
+      "notes": "Configure SMTP credentials in n8n for this node, or replace with Slack/Telegram."
+    }
+  ],
+  "connections": {
+    "Cron (Daily 06:30 UK)": {
+      "main": [
+        [
+          {
+            "node": "Set (Config)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set (Config)": {
+      "main": [
+        [
+          {
+            "node": "Function (Expand Regions)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function (Expand Regions)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches (Regions)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches (Regions)": {
+      "main": [
+        [
+          {
+            "node": "Set (Items Manually)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Set (Items Manually)": {
+      "main": [
+        [
+          {
+            "node": "Function (Normalize Trends)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function (Normalize Trends)": {
+      "main": [
+        [
+          {
+            "node": "HTTP (Ingest Trends)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP (Ingest Trends)": {
+      "main": [
+        [
+          {
+            "node": "Function (Pick Top N)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function (Pick Top N)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches (Top Trends)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches (Top Trends)": {
+      "main": [
+        [
+          {
+            "node": "HTTP (Create Campaign)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "HTTP (Create Campaign)": {
+      "main": [
+        [
+          {
+            "node": "HTTP (Generate Content Packs)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP (Generate Content Packs)": {
+      "main": [
+        [
+          {
+            "node": "Email (Approval Request)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "00000000-0000-0000-0000-000000000001",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "id": "w1_daily_trends_to_contentpacks"
+}
