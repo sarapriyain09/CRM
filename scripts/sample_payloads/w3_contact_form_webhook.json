@@ -1,0 +1,8 @@
+{
+  "name": "Test Contact",
+  "email": "contact@example.com",
+  "phone": "+44 0000 000000",
+  "region": "UK",
+  "message": "Hi, I want a website + CRM prototype for my business.",
+  "utm_campaign": "uk_example_campaign"
+}

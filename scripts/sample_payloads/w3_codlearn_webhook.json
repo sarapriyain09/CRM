@@ -1,0 +1,14 @@
+{
+  "email": "lead@example.com",
+  "full_name": "Test Lead",
+  "region": "UK",
+  "source_platform": "linkedin",
+  "source_detail": "uk_example_campaign",
+  "intent": "small_business",
+  "event_type": "cta_clicked",
+  "metadata": {
+    "campaign_slug": "uk_example_campaign",
+    "post_id": 123,
+    "utm_source": "linkedin"
+  }
+}

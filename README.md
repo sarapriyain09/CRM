@@ -105,3 +105,8 @@ Workflow JSON exports live in `n8n/` and can be imported into n8n.
 	- Webhook paths:
 		- `POST /webhook/codlearn-webhook`
 		- `POST /webhook/splendid-contact-webhook`
+
+## Smoke test
+
+- Automated API smoke test: `scripts/smoke.ps1`
+- Runbook: `doc/runbook_smoke_test.md`
