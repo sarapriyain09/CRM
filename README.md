@@ -8,6 +8,15 @@ FastAPI + PostgreSQL backend for:
 
 ## 1) Start PostgreSQL (Docker)
 
+Quick start (runs Postgres via Docker, runs migrations, starts the API):
+
+```powershell
+cd d:\Five_Pillar\07Software\SplendidTechnology\CRM
+\.\scripts\run_dev.ps1
+```
+
+If port `8000` is blocked on Windows, it will fall back to `8001`.
+
 ```powershell
 cd d:\Five_Pillar\07Software\SplendidTechnology\CRM
 
