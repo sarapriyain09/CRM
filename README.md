@@ -114,3 +114,5 @@ Workflow JSON exports live in `n8n/` and can be imported into n8n.
 
 - Automated API smoke test: `scripts/smoke.ps1`
 - Runbook: `doc/runbook_smoke_test.md`
+
+Tip: Run the script by its real path (e.g. `\.\scripts\smoke.ps1`) and pass `-ApiBase` as the server root (e.g. `http://127.0.0.1:8000`, not `.../api`).

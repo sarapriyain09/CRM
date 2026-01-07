@@ -32,8 +32,11 @@ $env:API_KEY = 'change_me'
 
 Notes:
 - If your API is not on localhost, set `-ApiBase`.
+- `-ApiBase` should be the server root (example: `http://127.0.0.1:8000`), not `.../api`.
 - The script will create a new campaign slug each run.
 - If the scoring rules don’t produce a score ≥ 60, it will skip the handoff step (that is still considered a pass for smoke testing).
+
+Tip: Run the script by its real path (e.g. `\.\scripts\smoke.ps1`). If you accidentally click a VS Code `http://_vscodecontentref_/...` link, PowerShell will error because that URL is not a file path.
 
 To force the handoff path (score ≥ 60) in a single run:
 
