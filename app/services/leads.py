@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -8,9 +8,9 @@ from app.models.lead import Lead
 from app.models.lead_event import LeadEvent
 from app.models.lead_note import LeadNote
 from app.models.lead_task import LeadTask
-from app.models.scoring_rule import ScoringRule
 from app.models.enums import HandoffTarget
 from app.schemas.lead import LeadEventCreate, LeadNoteCreate, LeadTaskCreate, LeadUpsert
+from app.services.scoring import calculate_score_for_lead
 
 
 SALES_READY_THRESHOLD = 60
@@ -66,13 +66,15 @@ def add_lead_event(db: Session, lead_id: int, payload: LeadEventCreate) -> LeadE
 
     data = payload.model_dump()
     event_at = data.get("event_at")
-    if event_at is not None and event_at.tzinfo is None:
-        data["event_at"] = event_at.replace(tzinfo=timezone.utc)
+    if event_at is None:
+        event_at = datetime.now(timezone.utc)
+    elif event_at.tzinfo is None:
+        event_at = event_at.replace(tzinfo=timezone.utc)
 
     event = LeadEvent(
         lead_id=lead_id,
         event_type=data["event_type"],
-        event_at=data.get("event_at"),
+        event_at=event_at,
         meta=data.get("metadata", {}),
     )
     db.add(event)
@@ -112,16 +114,7 @@ def _recalculate_score_and_handoff(db: Session, lead_id: int) -> None:
     if not lead:
         return
 
-    rules = {r.code: r for r in db.scalars(select(ScoringRule).where(ScoringRule.enabled.is_(True))).all()}
-    events = list(db.scalars(select(LeadEvent).where(LeadEvent.lead_id == lead_id)).all())
-
-    score = 0
-    for event in events:
-        rule = rules.get(event.event_type)
-        if rule:
-            score += int(rule.points)
-
-    lead.score = score
+    lead.score = calculate_score_for_lead(db, lead_id)
     db.add(lead)
     db.commit()
     db.refresh(lead)

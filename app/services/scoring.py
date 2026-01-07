@@ -8,6 +8,7 @@ from app.schemas.scoring import LeadScoreOut
 
 SCORE_RULES: dict[str, int] = {
     "visited_pricing": 10,
+    "cta_clicked": 20,
     "codlearn_project_created": 20,
     "export_attempt": 30,
     "intent_ecommerce_selected": 40,
