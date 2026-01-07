@@ -78,3 +78,30 @@ For n8n, set environment variables:
 
 - `API_BASE` (example: `http://host.docker.internal:8000` if n8n runs in Docker)
 - `API_KEY`
+
+## n8n workflows
+
+Workflow JSON exports live in `n8n/` and can be imported into n8n.
+
+### Environment variables
+
+- `API_BASE` (example: `http://host.docker.internal:8000` if n8n runs in Docker)
+- `API_KEY`
+- Optional (only if you use the included Email nodes):
+	- `NOTIFY_FROM_EMAIL`
+	- `NOTIFY_TO_EMAIL`
+
+### Workflows
+
+- `n8n/W1_Daily_Trends_To_ContentPacks.json`
+	- Daily flow: ingest trends → create campaign(s) → generate content packs.
+	- Uses a manual “Set (Items Manually)” placeholder instead of `/api/trends/fetch`.
+
+- `n8n/W2_Approved_Content_To_Scheduled_Posts.json`
+	- Every 2 hours: fetch approved content packs → schedule posts via `/api/posts/schedule`.
+
+- `n8n/W3_Leads_Events_To_CRM_And_Handoff.json`
+	- Webhooks → upsert lead → append lead event → recalculate score → if score ≥ 60 create handoff + create a follow-up task.
+	- Webhook paths:
+		- `POST /webhook/codlearn-webhook`
+		- `POST /webhook/splendid-contact-webhook`
