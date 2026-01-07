@@ -4,7 +4,8 @@ param(
   [switch]$SkipTrends,
   [switch]$SkipContent,
   [switch]$SkipPosts,
-  [switch]$SkipLead
+  [switch]$SkipLead,
+  [switch]$ForceHandoff
 )
 
 $ErrorActionPreference = 'Stop'
@@ -162,13 +163,28 @@ if (-not $SkipLead) {
   Write-Host "Lead: id=$leadId created=$($leadResp.created)" -ForegroundColor Green
 
   Write-Host "[5b] Add lead event" -ForegroundColor Cyan
-  $eventBody = @{ 
-    event_type = 'cta_clicked'
-    event_at = (Get-Date).ToString('o')
-    metadata = @{ campaign_slug = $slug; post_id = $postId; url = 'https://www.codlearn.com/app/' }
+  if ($ForceHandoff) {
+    Write-Host "ForceHandoff enabled: posting multiple events to reach score >= 60" -ForegroundColor Yellow
+
+    $events = @(
+      @{ event_type = 'visited_pricing'; metadata = @{ campaign_slug = $slug; post_id = $postId; url = 'https://www.codlearn.com/pricing' } },
+      @{ event_type = 'export_attempt'; metadata = @{ campaign_slug = $slug; post_id = $postId; feature = 'export' } },
+      @{ event_type = 'contact_form_submitted'; metadata = @{ campaign_slug = $slug; post_id = $postId; form = 'contact' } }
+    )
+
+    foreach ($e in $events) {
+      $eventResp = Invoke-Api -Method POST -Path ("/api/leads/{0}/events" -f $leadId) -Body $e
+      Write-Host "Event created: type=$($e.event_type) event_id=$($eventResp.event_id)" -ForegroundColor Green
+    }
+  } else {
+    $eventBody = @{ 
+      event_type = 'cta_clicked'
+      event_at = (Get-Date).ToString('o')
+      metadata = @{ campaign_slug = $slug; post_id = $postId; url = 'https://www.codlearn.com/app/' }
+    }
+    $eventResp = Invoke-Api -Method POST -Path ("/api/leads/{0}/events" -f $leadId) -Body $eventBody
+    Write-Host "Event created: event_id=$($eventResp.event_id)" -ForegroundColor Green
   }
-  $eventResp = Invoke-Api -Method POST -Path ("/api/leads/{0}/events" -f $leadId) -Body $eventBody
-  Write-Host "Event created: event_id=$($eventResp.event_id)" -ForegroundColor Green
 
   Write-Host "[5c] Recalculate score" -ForegroundColor Cyan
   $scoreResp = Invoke-Api -Method POST -Path ("/api/leads/{0}/score/recalculate" -f $leadId)

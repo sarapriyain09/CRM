@@ -35,6 +35,12 @@ Notes:
 - The script will create a new campaign slug each run.
 - If the scoring rules don’t produce a score ≥ 60, it will skip the handoff step (that is still considered a pass for smoke testing).
 
+To force the handoff path (score ≥ 60) in a single run:
+
+```powershell
+.\scripts\smoke.ps1 -ApiBase "http://127.0.0.1:8000" -ForceHandoff
+```
+
 Useful flags:
 
 ```powershell
@@ -42,6 +48,7 @@ Useful flags:
 .\scripts\smoke.ps1 -SkipContent
 .\scripts\smoke.ps1 -SkipPosts
 .\scripts\smoke.ps1 -SkipLead
+.\scripts\smoke.ps1 -ForceHandoff
 ```
 
 ## Option B — Validate the n8n workflows
