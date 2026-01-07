@@ -24,12 +24,35 @@ function Invoke-Api(
   $uri = ($ApiBase.TrimEnd('/') + $Path)
   $headers = @{ Authorization = "Bearer $ApiKey" }
 
-  if ($null -ne $Body) {
-    $json = $Body | ConvertTo-Json -Depth 20
-    return Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' -Body $json
-  }
+  try {
+    if ($null -ne $Body) {
+      $json = $Body | ConvertTo-Json -Depth 20
+      return Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' -Body $json
+    }
 
-  return Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers
+    return Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers
+  } catch {
+    Write-Host "\nAPI call failed: $Method $uri" -ForegroundColor Red
+    if ($_.Exception.Response) {
+      try {
+        $statusCode = [int]$_.Exception.Response.StatusCode
+        Write-Host "HTTP $statusCode" -ForegroundColor Red
+
+        $stream = $_.Exception.Response.GetResponseStream()
+        if ($stream) {
+          $reader = New-Object System.IO.StreamReader($stream)
+          $bodyText = $reader.ReadToEnd()
+          if (-not [string]::IsNullOrWhiteSpace($bodyText)) {
+            Write-Host "Response body:" -ForegroundColor DarkRed
+            Write-Host $bodyText
+          }
+        }
+      } catch {
+        # ignore secondary errors while extracting response details
+      }
+    }
+    throw
+  }
 }
 
 Assert-NotEmpty $ApiBase 'ApiBase'
