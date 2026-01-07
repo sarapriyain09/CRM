@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Splendid CRM — Handoffs</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+  <div class="container">
+    <div class="row" style="justify-content: space-between;">
+      <h1 class="h1" style="margin: 0;">Handoffs</h1>
+      <button id="refreshBtn" type="button" class="secondary">Refresh</button>
+    </div>
+
+    <div style="height: 10px"></div>
+
+    <div class="card">
+      <h2 class="h2">Recent</h2>
+      <table class="table" id="handoffTable">
+        <thead>
+          <tr><th>ID</th><th>Lead</th><th>Target</th><th>Created</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script type="module" src="js/handoffs.js"></script>
+</body>
+</html>

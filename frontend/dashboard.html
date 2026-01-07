@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Splendid CRM — Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+  <div class="container">
+    <h1 class="h1">Dashboard</h1>
+
+    <div class="grid cols-3" id="cards"></div>
+
+    <div style="height: 12px"></div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h2 class="h2">Recent handoffs</h2>
+        <table class="table" id="handoffTable">
+          <thead>
+            <tr><th>ID</th><th>Lead</th><th>Target</th><th>Created</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2 class="h2">Quick links</h2>
+        <div class="grid">
+          <a href="leads.html">Open Leads</a>
+          <a href="campaigns.html">Open Campaigns</a>
+          <a href="handoffs.html">Open Handoffs</a>
+          <a href="settings.html">Open Settings</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Tip: For a demo, run the smoke test with <code>-ForceHandoff</code> to generate a handoff + task.</div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>

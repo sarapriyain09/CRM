@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Splendid CRM — Lead</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+  <div class="container">
+    <div class="row" style="justify-content: space-between;">
+      <h1 class="h1" style="margin:0;">Lead</h1>
+      <a href="leads.html">Back to Leads</a>
+    </div>
+
+    <div style="height: 10px"></div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h2 class="h2">Details</h2>
+        <div class="kv" id="leadKv"></div>
+        <div style="height: 10px"></div>
+        <button id="recalcBtn" type="button">Recalculate score</button>
+        <span class="badge" id="scoreBadge" style="margin-left: 10px;"></span>
+      </div>
+
+      <div class="card">
+        <h2 class="h2">Actions</h2>
+
+        <div class="grid">
+          <div>
+            <label for="eventType">Add event</label>
+            <div class="row">
+              <input id="eventType" placeholder="visited_pricing" />
+              <button id="addEventBtn" type="button">Add</button>
+            </div>
+            <div class="footer">Known scoring examples: visited_pricing, export_attempt, contact_form_submitted, cta_clicked</div>
+          </div>
+
+          <div>
+            <label for="note">Add note</label>
+            <textarea id="note" placeholder="Short note..."></textarea>
+            <div class="row">
+              <button id="addNoteBtn" type="button">Save note</button>
+              <span class="badge" id="noteResult"></span>
+            </div>
+          </div>
+
+          <div>
+            <label for="taskTitle">Add task</label>
+            <div class="row">
+              <input id="taskTitle" placeholder="Follow up" />
+              <button id="addTaskBtn" type="button">Create</button>
+            </div>
+            <span class="badge" id="taskResult"></span>
+          </div>
+
+          <div>
+            <label for="handoffTarget">Create handoff</label>
+            <div class="row">
+              <select id="handoffTarget">
+                <option value="splendid">splendid</option>
+                <option value="codlearn">codlearn</option>
+              </select>
+              <button id="handoffBtn" type="button" class="secondary">Create</button>
+            </div>
+            <span class="badge" id="handoffResult"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script type="module" src="js/lead.js"></script>
+</body>
+</html>

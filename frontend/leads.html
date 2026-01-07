@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Splendid CRM — Leads</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+  <div class="container">
+    <div class="row" style="justify-content: space-between;">
+      <h1 class="h1" style="margin: 0;">Leads</h1>
+      <button id="refreshBtn" type="button" class="secondary">Refresh</button>
+    </div>
+
+    <div style="height: 10px"></div>
+
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label for="status">Status</label>
+          <select id="status">
+            <option value="">Any</option>
+            <option>new</option>
+            <option>contacted</option>
+            <option>qualified</option>
+            <option>proposal</option>
+            <option>won</option>
+            <option>lost</option>
+            <option>nurture</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="intent">Intent</label>
+          <select id="intent">
+            <option value="">Any</option>
+            <option>student</option>
+            <option>small_business</option>
+            <option>ecommerce</option>
+            <option>internal_tool</option>
+            <option>agency_client</option>
+            <option>unknown</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="minScore">Min score</label>
+          <input id="minScore" placeholder="0" />
+        </div>
+        <div class="field">
+          <label for="limit">Limit</label>
+          <input id="limit" value="50" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top: 10px;">
+        <button id="applyBtn" type="button">Apply</button>
+        <span class="badge" id="countBadge">0</span>
+      </div>
+
+      <div style="height: 10px"></div>
+
+      <table class="table" id="leadTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Intent</th>
+            <th>Score</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script type="module" src="js/leads.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Splendid CRM — Access</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card" style="max-width: 640px; margin: 32px auto;">
+      <h1 class="h1">Access</h1>
+      <p class="notice">Paste your API key once. The UI stores it in your browser (localStorage) and uses it as <code>Authorization: Bearer &lt;token&gt;</code> for all <code>/api/*</code> calls.</p>
+
+      <form id="accessForm" class="grid" style="margin-top: 12px;">
+        <div>
+          <label for="apiBase">API Base (optional)</label>
+          <input id="apiBase" name="apiBase" placeholder="http://127.0.0.1:8001" />
+          <div class="footer">Leave blank to use the current site origin.</div>
+        </div>
+
+        <div>
+          <label for="token">API Token</label>
+          <input id="token" name="token" placeholder="change_me" />
+        </div>
+
+        <div class="row">
+          <button type="submit">Continue</button>
+          <button id="clearBtn" type="button" class="danger">Clear</button>
+        </div>
+      </form>
+
+      <div class="footer">After saving, open <a href="dashboard.html">Dashboard</a>.</div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script type="module">
+    import { getApiBase, getToken, setApiBase, setToken, clearToken, API_BASE_KEY } from './js/auth.js';
+    import { toast } from './js/ui.js';
+
+    const apiBaseEl = document.getElementById('apiBase');
+    const tokenEl = document.getElementById('token');
+
+    apiBaseEl.value = localStorage.getItem(API_BASE_KEY) || '';
+    tokenEl.value = getToken() || '';
+
+    document.getElementById('accessForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      setApiBase(apiBaseEl.value);
+      setToken(tokenEl.value.trim());
+      if (!getToken()) {
+        toast('Token is required.');
+        return;
+      }
+      toast('Saved. Redirecting...');
+      setTimeout(() => { window.location.href = 'dashboard.html'; }, 350);
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      clearToken();
+      localStorage.removeItem(API_BASE_KEY);
+      apiBaseEl.value = '';
+      tokenEl.value = '';
+      toast('Cleared.');
+    });
+  </script>
+</body>
+</html>

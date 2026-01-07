@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Splendid CRM — Campaigns</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="appHeader"></div>
+  <div class="container">
+    <div class="row" style="justify-content: space-between;">
+      <h1 class="h1" style="margin: 0;">Campaigns</h1>
+      <button id="refreshBtn" type="button" class="secondary">Refresh</button>
+    </div>
+
+    <div style="height: 10px"></div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h2 class="h2">Create campaign</h2>
+        <div class="grid">
+          <div>
+            <label for="name">Name</label>
+            <input id="name" placeholder="UK Demo Campaign" />
+          </div>
+          <div>
+            <label for="slug">Slug</label>
+            <input id="slug" placeholder="uk_demo_20260107" />
+          </div>
+          <div>
+            <label for="region">Region</label>
+            <input id="region" placeholder="UK" />
+          </div>
+          <div>
+            <label for="target">Target</label>
+            <select id="target">
+              <option value="codlearn">codlearn</option>
+              <option value="splendid">splendid</option>
+            </select>
+          </div>
+          <div>
+            <label for="offer">Offer (optional)</label>
+            <input id="offer" placeholder="Free prototype" />
+          </div>
+          <div>
+            <label for="niche">Niche (optional)</label>
+            <input id="niche" placeholder="small_business" />
+          </div>
+          <div>
+            <label for="status">Status</label>
+            <input id="status" value="active" />
+          </div>
+          <div class="row">
+            <button id="createBtn" type="button">Create</button>
+            <span class="badge" id="createResult"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="h2">Campaign list</h2>
+        <table class="table" id="campaignTable">
+          <thead>
+            <tr><th>ID</th><th>Name</th><th>Slug</th><th>Region</th><th>Target</th><th>Status</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script type="module" src="js/campaigns.js"></script>
+</body>
+</html>

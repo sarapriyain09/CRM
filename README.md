@@ -70,6 +70,9 @@ If you hit `ERROR: [WinError 10013] ... forbidden by its access permissions`, an
 Health check:
 - `GET http://127.0.0.1:8000/health` (or `:8001` if you changed ports)
 
+Frontend UI:
+- `http://127.0.0.1:8000/` (or `:8001` if you changed ports)
+
 OpenAPI:
 - `http://127.0.0.1:8000/docs`
 
