@@ -1,0 +1,365 @@
+{
+  "name": "W3_Leads_Events_To_CRM_And_Handoff",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "codlearn-webhook",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "2f7a1c9e-6d7b-4b1a-9d3c-2b7f1a9c6d7b",
+      "name": "Webhook (CodLearn)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "path": "splendid-contact-webhook",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "8c1a2b3c-4d5e-4f60-8a1b-2c3d4e5f6071",
+      "name": "Webhook (Splendid Contact)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Normalize inbound payloads into LeadUpsert + LeadEventCreate requests.\n// Expected inbound examples:\n// - CodLearn: { email?, full_name?, region?, source_platform?, source_detail?, intent?, event_type, metadata }\n// - Contact form: { name, email, phone?, message, region? }\n\nconst body = $json.body || $json;\n\nconst email = body.email || null;\nconst full_name = body.full_name || body.name || null;\nconst phone = body.phone || null;\nconst region = body.region || 'UK';\n\nconst source_platform = body.source_platform || body.platform || 'other';\nconst source_detail = body.source_detail || body.campaign_slug || body.utm_campaign || 'webhook';\n\nconst intent = body.intent || 'unknown';\n\n// Build a generic event\nconst event_type = body.event_type || (body.message ? 'contact_form_submitted' : 'webhook_event');\nconst metadata = body.metadata || (body.message ? { message: body.message } : body);\n\nreturn [{\n  json: {\n    lead_upsert: {\n      email,\n      full_name,\n      phone,\n      region,\n      source_platform,\n      source_detail,\n      intent,\n      attributes: {\n        utm: body.utm || null,\n        raw: body\n      }\n    },\n    lead_event: {\n      event_type,\n      metadata,\n      event_at: body.event_at || new Date().toISOString()\n    },\n    handoff_hint: {\n      target: 'splendid',\n      reason: body.reason || null\n    }\n  }\n}];"
+      },
+      "id": "0a9b8c7d-6e5f-4a3b-8c7d-6e5f4a3b2c1d",
+      "name": "Function (Normalize Lead + Event)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        480,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE + '/api/leads/upsert'}}",
+        "sendHeaders": true,
+              "node": "Function (Normalize Lead + Event)",
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "={{'Bearer ' + $env.API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+              "node": "Function (Normalize Lead + Event)",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json.lead_upsert}}"
+      },
+      "id": "1b2c3d4e-5f60-4a71-8b2c-3d4e5f607182",
+      "name": "HTTP (Lead Upsert)",
+      "id": "9d8c7b6a-5f4e-4d3c-9b8a-7c6d5e4f3a2b",
+      "name": "Function (Attach lead_id)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE + '/api/leads/' + $json.lead_id + '/events'}}",
+        "sendHeaders": true,
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "={{'Bearer ' + $env.API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json.lead_event}}"
+      },
+      "id": "c0ffee00-1111-2222-3333-444455556666",
+      "name": "HTTP (Add Lead Event)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1440,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE + '/api/leads/' + $node['Function (Attach lead_id)'].json.lead_id + '/score/recalculate'}}",
+        "sendHeaders": true,
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "={{'Bearer ' + $env.API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "id": "abcdef01-2345-6789-abcd-ef0123456789",
+      "name": "HTTP (Recalculate Score)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1680,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.score}}",
+              "operation": "largerEqual",
+              "value2": 60
+            }
+          ]
+        }
+      },
+      "id": "13572468-2468-1357-2468-135724681357",
+      "name": "IF (Score >= 60)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE + '/api/handoff/create'}}",
+        "sendHeaders": true,
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "={{'Bearer ' + $env.API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  lead_id: $json.lead_id,\n  target: 'splendid',\n  reason: $node['Function (Normalize Lead + Event)'].json.handoff_hint.reason || ('Score=' + $json.score),\n  payload: { score: $json.score, status: $json.status, intent: $json.intent, source_detail: $node['Function (Normalize Lead + Event)'].json.lead_upsert.source_detail }\n}"
+      },
+      "id": "0f1e2d3c-4b5a-6978-8070-0f1e2d3c4b5a",
+      "name": "HTTP (Create Handoff)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2160,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE + '/api/leads/' + $json.lead_id + '/tasks'}}",
+        "sendHeaders": true,
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "={{'Bearer ' + $env.API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  title: 'Follow up (sales-ready lead)',\n  due_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()\n}"
+      },
+      "id": "aa11bb22-cc33-dd44-ee55-ff6677889900",
+      "name": "HTTP (Create Follow-up Task)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2160,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{$env.NOTIFY_FROM_EMAIL || 'n8n@localhost'}}",
+        "toEmail": "={{$env.NOTIFY_TO_EMAIL || 'you@yourdomain.com'}}",
+        "subject": "={{'W3: Sales-ready lead (score ' + $json.score + ')'}}",
+        "text": "={{'Lead ' + $json.lead_id + ' is sales-ready. intent=' + $json.intent + ', status=' + $json.status + '. Handoff created.'}}",
+        "options": {}
+      },
+      "id": "deadbeef-0000-1111-2222-333344445555",
+      "name": "Email (Sales Ready)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        240
+      ],
+      "notes": "Replace with Slack/Telegram if preferred."
+    }
+  ],
+  "connections": {
+    "Webhook (CodLearn)": {
+      "main": [
+        [
+          {
+            "node": "Merge (Any Source)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (Splendid Contact)": {
+      "main": [
+        [
+          {
+            "node": "Merge (Any Source)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge (Any Source)": {
+      "main": [
+        [
+          {
+            "node": "Function (Normalize Lead + Event)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function (Normalize Lead + Event)": {
+      "main": [
+        [
+          {
+            "node": "HTTP (Lead Upsert)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP (Lead Upsert)": {
+      "main": [
+        [
+          {
+            "node": "Function (Attach lead_id)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function (Attach lead_id)": {
+      "main": [
+        [
+          {
+            "node": "HTTP (Add Lead Event)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP (Add Lead Event)": {
+      "main": [
+        [
+          {
+            "node": "HTTP (Recalculate Score)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP (Recalculate Score)": {
+      "main": [
+        [
+          {
+            "node": "IF (Score >= 60)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF (Score >= 60)": {
+      "main": [
+        [
+          {
+            "node": "HTTP (Create Handoff)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP (Create Follow-up Task)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "HTTP (Create Handoff)": {
+      "main": [
+        [
+          {
+            "node": "Email (Sales Ready)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "00000000-0000-0000-0000-000000000003",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "id": "w3_leads_events_to_crm_and_handoff"
+}

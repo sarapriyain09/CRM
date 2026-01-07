@@ -1,0 +1,234 @@
+{
+  "name": "W2_Approved_Content_To_Scheduled_Posts",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": [
+          {
+            "mode": "everyX",
+            "value": 2,
+            "unit": "hours"
+          }
+        ],
+        "timezone": "Europe/London"
+      },
+      "id": "b70d6f0a-9c93-4c07-9b32-2a4e1d29f5a2",
+      "name": "Cron (Every 2h)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        260,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "json": [
+            {
+              "name": "limit",
+              "value": "={{ 50 }}"
+            },
+            {
+              "name": "timezone",
+              "value": "={{ 'Europe/London' }}"
+            },
+            {
+              "name": "scheduleSpacingMinutes",
+              "value": "={{ 20 }}"
+            }
+          ]
+        }
+      },
+      "id": "2c6f87d6-0bd6-4a11-9a7b-64b3b5a6f3f9",
+      "name": "Set (Config)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        500,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.API_BASE + '/api/content/approved?limit=' + $json.limit}}",
+        "sendHeaders": true,
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "={{'Bearer ' + $env.API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "id": "8e6c6a6c-11a2-4ef4-9c4d-6a4a7a0d2e3f",
+      "name": "HTTP (List Approved Content)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        740,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Expand packs[] into individual items for scheduling.\nconst packs = $json.packs || [];\nconst spacing = $node['Set (Config)'].json.scheduleSpacingMinutes || 20;\n\n// Schedule starting ~10 minutes from now, spaced out.\nconst base = new Date(Date.now() + 10 * 60 * 1000);\n\nreturn packs.map((p, idx) => {\n  const scheduled = new Date(base.getTime() + idx * spacing * 60 * 1000).toISOString();\n  return {\n    json: {\n      content_pack_id: p.id || p.content_pack_id || p.contentPackId,\n      campaign_id: p.campaign_id || p.campaignId,\n      platform: p.platform,\n      scheduled_at: scheduled,\n      content_json: p.content_json || {}\n    }\n  };\n});"
+      },
+      "id": "b4c86a70-3f5f-4a0e-8d2f-3a6a3b4c8d01",
+      "name": "Function (Expand + Schedule Times)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        980,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "3b2c1d0e-0c14-4d5a-b6ad-2a7d1a6c2c10",
+      "name": "Split In Batches (Packs)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE + '/api/posts/schedule'}}",
+        "sendHeaders": true,
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "={{'Bearer ' + $env.API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  campaign_id: $json.campaign_id,\n  content_pack_id: $json.content_pack_id,\n  platform: $json.platform,\n  scheduled_at: $json.scheduled_at\n}"
+      },
+      "id": "c3df7b21-1d4a-4cc9-b5de-8a1c2d3f4e5a",
+      "name": "HTTP (Schedule Post)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1460,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{$env.NOTIFY_FROM_EMAIL || 'n8n@localhost'}}",
+        "toEmail": "={{$env.NOTIFY_TO_EMAIL || 'you@yourdomain.com'}}",
+        "subject": "={{'W2: Post scheduled (' + $node['Split In Batches (Packs)'].json.platform + ')'}}",
+        "text": "={{'Scheduled post for campaign_id=' + $node['Split In Batches (Packs)'].json.campaign_id + ', content_pack_id=' + $node['Split In Batches (Packs)'].json.content_pack_id + ' at ' + $node['Split In Batches (Packs)'].json.scheduled_at + '. API response post_id=' + $json.post_id}}",
+        "options": {}
+      },
+      "id": "f00a4c5b-1f26-4a3a-8c10-1e2d3c4b5a60",
+      "name": "Email (Scheduled Notice)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        240
+      ],
+      "notes": "Replace with Slack/Telegram if preferred."
+    }
+  ],
+  "connections": {
+    "Cron (Every 2h)": {
+      "main": [
+        [
+          {
+            "node": "Set (Config)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set (Config)": {
+      "main": [
+        [
+          {
+            "node": "HTTP (List Approved Content)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP (List Approved Content)": {
+      "main": [
+        [
+          {
+            "node": "Function (Expand + Schedule Times)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function (Expand + Schedule Times)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches (Packs)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches (Packs)": {
+      "main": [
+        [
+          {
+            "node": "HTTP (Schedule Post)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "HTTP (Schedule Post)": {
+      "main": [
+        [
+          {
+            "node": "Email (Scheduled Notice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "00000000-0000-0000-0000-000000000002",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "id": "w2_approved_content_to_scheduled_posts"
+}
