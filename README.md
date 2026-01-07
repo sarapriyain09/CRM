@@ -53,3 +53,28 @@ Health check:
 
 OpenAPI:
 - `http://127.0.0.1:8000/docs`
+
+## Auth (API key)
+
+All `/api/*` endpoints require a Bearer token:
+
+- Header: `Authorization: Bearer <API_KEY>`
+- If missing/invalid: `401 {"detail":"..."}`
+
+Set `API_KEY` in your `.env` (see `.env.example`).
+
+Example:
+
+```powershell
+$API_BASE = 'http://127.0.0.1:8000'
+$API_KEY = 'change_me'
+
+curl -Method POST "$API_BASE/api/trends/ingest" `
+	-Headers @{ Authorization = "Bearer $API_KEY"; "Content-Type" = "application/json" } `
+	-Body '{"region":"UK","items":[{"source":"manual","topic":"AI website builder","metrics":{"interest":78},"features":{"recency_hours":6}}]}'
+```
+
+For n8n, set environment variables:
+
+- `API_BASE` (example: `http://host.docker.internal:8000` if n8n runs in Docker)
+- `API_KEY`
