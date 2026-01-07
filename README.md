@@ -22,8 +22,12 @@ This uses:
 
 ## 2) Create Python env + install
 
+Recommended Python: 3.12 or 3.13.
+
+Note: Python 3.14 may fail to install dependencies (e.g. `pydantic-core`) until upstream wheels/tooling catch up.
+
 ```powershell
-python -m venv .venv
+py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
@@ -39,13 +43,13 @@ Edit `.env` if needed.
 ## 4) Run migrations
 
 ```powershell
-alembic upgrade head
+.\.venv\Scripts\alembic upgrade head
 ```
 
 ## 5) Run API
 
 ```powershell
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+.\.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 Health check:

@@ -7,10 +7,14 @@ This runbook helps you validate the end-to-end MVP flow on a fresh machine:
 
 ## Preconditions
 
+- Python 3.12 or 3.13
 - PostgreSQL is running (via Docker Compose)
-- Migrations are applied (`alembic upgrade head`)
-- API is running (`uvicorn app.main:app --reload`)
+- Dependencies installed (`pip install -r requirements.txt`)
+- Migrations are applied (`.\.venv\Scripts\alembic upgrade head`)
+- API is running (`.\.venv\Scripts\python -m uvicorn app.main:app --reload`)
 - You know your API key (`API_KEY` in `.env`)
+
+Note: Python 3.14 may fail to install dependencies (e.g. `pydantic-core`) until upstream wheels/tooling catch up.
 
 ## Option A — Automated API smoke test (recommended)
 
